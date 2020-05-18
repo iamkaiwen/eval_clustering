@@ -6,6 +6,9 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.manifold import TSNE
+
+current_path = os.path.abspath(".")
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -57,8 +60,25 @@ def show_plot_box(result, method, cmpclass):
     df = pd.DataFrame(data)
     df.plot.box(grid='True')
     plt.title(method + " " + cmpclass)
-    current_path = os.path.abspath(".")
     plt.savefig(current_path + "\\out\\" + method + "_" + cmpclass + ".png")
+
+def show_tsne(filename, data):
+    tsne = TSNE(n_components=2, init='pca', random_state=0)
+    X = [news["embedding"] for cluster in data for news in cluster]
+    label = [index for cluster in data for index in range(len(cluster))]
+    result = tsne.fit_transform(X)
+    x_min, x_max = result.min(0), result.max(0)
+    X_norm = (result - x_min) / (x_max - x_min)
+    plt.figure(figsize=(8, 8))
+    for i in range(X_norm.shape[0]):
+        plt.text(X_norm[i, 0], X_norm[i, 1], str(label[i]), color=plt.cm.Set1(label[i]), 
+                fontdict={'weight': 'bold', 'size': 9})
+
+    plt.title('t-SNE embedding of ' + filename)
+    plt.grid()
+    plt.savefig(current_path + "\\t-SNE_out\\" + filename + ".png")
+    # plt.show()
+
 
 if __name__ == '__main__':
     args = parse_args()
@@ -71,6 +91,10 @@ if __name__ == '__main__':
             with open(dirpath + '/' + filename, 'r', encoding='utf-8') as f:
                 data = json.load(f)['result']
             
+            print('gen t-SNE ' + filename.split('.')[0] + '...')
+            show_tsne(filename.split('.')[0], data)
+
+            print('Cal ' + filename.split('.')[0] + '...')
             out = {}
 
             if args.manhattan:
@@ -82,10 +106,12 @@ if __name__ == '__main__':
             result[filename] = out
 
     if args.manhattan:
+        print('Show manhattan plot box ...')
         show_plot_box(result, "manhattan", "sim")
         show_plot_box(result, "manhattan", "dissim")
     
     if args.euclidean:
+        print('Show euclidean plot box ...')
         show_plot_box(result, "euclidean", "sim")
         show_plot_box(result, "euclidean", "dissim")
 
