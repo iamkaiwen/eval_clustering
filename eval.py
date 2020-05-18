@@ -94,19 +94,24 @@ def show_tsne(filename, data):
     # tsne = TSNE(n_components=2, init='pca', random_state=0)
     pca = PCA(n_components=2)
     X = [news["embedding"] for cluster in data for news in cluster]
-    label = [index for cluster in data for index in range(len(cluster))]
+    label = [cluster_index for cluster_index, cluster in enumerate(data) for index in range(len(cluster))]
     # result = tsne.fit_transform(X)
     result = pca.fit_transform(X)
     x_min, x_max = result.min(0), result.max(0)
     X_norm = (result - x_min) / (x_max - x_min)
     plt.figure(figsize=(8, 8))
+    jet = plt.cm.get_cmap('jet', len(data))
     for i in range(X_norm.shape[0]):
-        plt.text(X_norm[i, 0], X_norm[i, 1], str(label[i]), color=plt.cm.Set1(label[i]), 
-                fontdict={'weight': 'bold', 'size': 9})
+        # plt.text(X_norm[i, 0], X_norm[i, 1], str(label[i]), color=plt.cm.Set1(label[i]), 
+        # plt.text(X_norm[i, 0], X_norm[i, 1], str(label[i]), color=jet(label[i] / len(data)), 
+        #         fontdict={'weight': 'bold', 'size': 9})
+        # plt.text(X_norm[i, 0], X_norm[i, 1], str('.'), color=jet(label[i] / len(data)), 
+        #         fontdict={'weight': 'bold', 'size': 40})
+        plt.plot(X_norm[i, 0], X_norm[i, 1], color=jet(label[i] / len(data)), marker='o', markersize=12)
 
-    plt.title('t-SNE embedding of ' + filename)
+    plt.title('PCA embedding of ' + filename)
     plt.grid()
-    plt.savefig(current_path + "\\t-SNE_out\\" + filename + ".png")
+    plt.savefig(current_path + "\\PCA_out\\" + filename + ".png")
     # plt.show()
 
 
