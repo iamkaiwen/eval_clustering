@@ -1,6 +1,7 @@
 import argparse
 import json
 from math import pow
+from math import gcd
 from itertools import combinations
 import os
 import pandas as pd
@@ -10,6 +11,12 @@ from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
 current_path = os.path.abspath(".")
+
+def get_lcm(input):
+    ans = 1
+    for x in input:
+        ans = ans * x // gcd(ans, x)
+    return ans
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -61,6 +68,15 @@ def show_plot_box(result, method, cmpclass):
                     [out[method][cmpclass] for out in result.values()]
                 )
             )
+
+    # extend to same number
+    get_lcm_input = [len(value) for key, value in data.items()]
+    lcm = get_lcm(get_lcm_input)
+    # print(lcm)
+    # print(get_lcm_input)
+    for key, value in data.items():
+        data[key] = value * (lcm // len(value))
+    
     df = pd.DataFrame(data)
     df.plot.box(grid='True')
     plt.title(method + " " + cmpclass)
