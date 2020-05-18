@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
 
 current_path = os.path.abspath(".")
 
@@ -37,6 +38,8 @@ def eval_similarity(data, q):
         tmp = 0
         for news1, news2 in combinations(cluster, 2):
             tmp += eval_minkowski(news1["embedding"], news2["embedding"], q)
+        if len(cluster) >= 2:
+            tmp = tmp / (len(cluster) * (len(cluster) - 1) / 2)
         ret.append(tmp)
     return ret
 
@@ -47,6 +50,7 @@ def eval_dissimilarity(data, q):
         for news1 in cluster1:
             for news2 in cluster2:
                 tmp += eval_minkowski(news1["embedding"], news2["embedding"], q)
+        tmp = tmp / (len(cluster1) * (len(cluster2)) / 2)
         ret.append(tmp)
     return ret
 
@@ -63,10 +67,13 @@ def show_plot_box(result, method, cmpclass):
     plt.savefig(current_path + "\\out\\" + method + "_" + cmpclass + ".png")
 
 def show_tsne(filename, data):
-    tsne = TSNE(n_components=2, init='pca', random_state=0)
+    # tsne = TSNE()
+    # tsne = TSNE(n_components=2, init='pca', random_state=0)
+    pca = PCA(n_components=2)
     X = [news["embedding"] for cluster in data for news in cluster]
     label = [index for cluster in data for index in range(len(cluster))]
-    result = tsne.fit_transform(X)
+    # result = tsne.fit_transform(X)
+    result = pca.fit_transform(X)
     x_min, x_max = result.min(0), result.max(0)
     X_norm = (result - x_min) / (x_max - x_min)
     plt.figure(figsize=(8, 8))
