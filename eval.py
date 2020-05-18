@@ -10,6 +10,10 @@ import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
+# https://medium.com/marketingdatascience/%E8%A7%A3%E6%B1%BApython-3-matplotlib%E8%88%87seaborn%E8%A6%96%E8%A6%BA%E5%8C%96%E5%A5%97%E4%BB%B6%E4%B8%AD%E6%96%87%E9%A1%AF%E7%A4%BA%E5%95%8F%E9%A1%8C-f7b3773a889b
+plt.rcParams['font.sans-serif'] = ['Microsoft JhengHei'] 
+plt.rcParams['axes.unicode_minus'] = False
+
 current_path = os.path.abspath(".")
 
 def get_lcm(input):
@@ -64,7 +68,8 @@ def eval_dissimilarity(data, q):
 def show_plot_box(result, method, cmpclass):
     data = dict(
                 zip(
-                    result.keys(),
+                    [key.split('.')[0] for key in result.keys()],
+                    # result.keys(),
                     [out[method][cmpclass] for out in result.values()]
                 )
             )
@@ -80,6 +85,8 @@ def show_plot_box(result, method, cmpclass):
     df = pd.DataFrame(data)
     df.plot.box(grid='True')
     plt.title(method + " " + cmpclass)
+    plt.xticks(rotation=10)
+    plt.tight_layout()
     plt.savefig(current_path + "\\out\\" + method + "_" + cmpclass + ".png")
 
 def show_tsne(filename, data):
