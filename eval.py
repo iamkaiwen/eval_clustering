@@ -28,6 +28,8 @@ def parse_args():
     parser.add_argument('outfile', nargs='?', default='result.json', type=str, metavar='output' ,help='output path to write result')
     parser.add_argument('-m', '--manhattan', action='store_true', help='Use manhattan method', dest='manhattan')
     parser.add_argument('-e', '--euclidean', action='store_true', help='Use euclidean method', dest='euclidean')
+    parser.add_argument('-t', '--tsne', action='store_true', help='Output tsne pic', dest='tsne')
+    parser.add_argument('-q', '--query', action='append', help='Query', dest='query')
 
     return parser.parse_args()
 
@@ -87,32 +89,42 @@ def show_plot_box(result, method, cmpclass):
     plt.title(method + " " + cmpclass)
     plt.xticks(rotation=10)
     plt.tight_layout()
-    plt.savefig(current_path + "\\out\\" + method + "_" + cmpclass + ".png")
+    dirpath = current_path + "\\cmp_out\\"
+    if not os.path.exists(dirpath):
+        os.makedirs(dirpath)
+    plt.savefig(dirpath + "\\" + method + "_" + cmpclass + ".png")
 
-def show_tsne(filename, data):
-    # tsne = TSNE()
+def show_tsne(dirpath, filename, data):
+    tsne = TSNE()
     # tsne = TSNE(n_components=2, init='pca', random_state=0)
-    pca = PCA(n_components=2)
+    # pca = PCA(n_components=2)
     X = [news["embedding"] for cluster in data for news in cluster]
     label = [cluster_index for cluster_index, cluster in enumerate(data) for index in range(len(cluster))]
-    # result = tsne.fit_transform(X)
-    result = pca.fit_transform(X)
+    result = tsne.fit_transform(X)
+    # result = pca.fit_transform(X)
     x_min, x_max = result.min(0), result.max(0)
     X_norm = (result - x_min) / (x_max - x_min)
     plt.figure(figsize=(8, 8))
     jet = plt.cm.get_cmap('jet', len(data))
     for i in range(X_norm.shape[0]):
-        # plt.text(X_norm[i, 0], X_norm[i, 1], str(label[i]), color=plt.cm.Set1(label[i]), 
-        # plt.text(X_norm[i, 0], X_norm[i, 1], str(label[i]), color=jet(label[i] / len(data)), 
-        #         fontdict={'weight': 'bold', 'size': 9})
-        # plt.text(X_norm[i, 0], X_norm[i, 1], str('.'), color=jet(label[i] / len(data)), 
-        #         fontdict={'weight': 'bold', 'size': 40})
         plt.plot(X_norm[i, 0], X_norm[i, 1], color=jet(label[i] / len(data)), marker='o', markersize=12)
 
     plt.title('PCA embedding of ' + filename)
     plt.grid()
-    plt.savefig(current_path + "\\PCA_out\\" + filename + ".png")
+    dirpath = current_path + "\\t-SNE_out\\" + dirpath.split("\\")[-1]
+    if not os.path.exists(dirpath):
+        os.makedirs(dirpath)
+    plt.savefig(dirpath + "\\" + filename + ".png")
     # plt.show()
+
+def have_to_cmp(filename, query):
+    if not query:
+        return True
+    
+    for q in query:
+        if q not in filename:
+            return False
+    return True
 
 
 if __name__ == '__main__':
@@ -126,26 +138,28 @@ if __name__ == '__main__':
             with open(dirpath + '/' + filename, 'r', encoding='utf-8') as f:
                 data = json.load(f)['result']
             
-            print('gen t-SNE ' + filename.split('.')[0] + '...')
-            show_tsne(filename.split('.')[0], data)
+            if args.tsne and have_to_cmp(filename, args.query):
+                print('gen t-SNE ' + filename.split('.')[0] + '...')
+                show_tsne(dirpath, filename.split('.')[0], data)
 
-            print('Cal ' + filename.split('.')[0] + '...')
-            out = {}
+            if (args.manhattan or args.euclidean) and have_to_cmp(filename, args.query):
+                print('Cal ' + filename.split('.')[0] + '...')
+                out = {}
 
-            if args.manhattan:
-                out["manhattan"] = {"sim" : eval_similarity(data, 1), "dissim" : eval_dissimilarity(data, 1)}
-            
-            if args.euclidean:
-                out["euclidean"] = {"sim" : eval_similarity(data, 2), "dissim" : eval_dissimilarity(data, 2)}
+                if args.manhattan:    
+                    out["manhattan"] = {"sim" : eval_similarity(data, 1), "dissim" : eval_dissimilarity(data, 1)}
+                
+                if args.euclidean:
+                    out["euclidean"] = {"sim" : eval_similarity(data, 2), "dissim" : eval_dissimilarity(data, 2)}
 
-            result[filename] = out
+                result[filename] = out
 
-    if args.manhattan:
+    if out and args.manhattan:
         print('Show manhattan plot box ...')
         show_plot_box(result, "manhattan", "sim")
         show_plot_box(result, "manhattan", "dissim")
     
-    if args.euclidean:
+    if out and args.euclidean:
         print('Show euclidean plot box ...')
         show_plot_box(result, "euclidean", "sim")
         show_plot_box(result, "euclidean", "dissim")
