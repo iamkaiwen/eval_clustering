@@ -68,7 +68,7 @@ def eval_dissimilarity(data, q):
         ret.append(tmp)
     return ret
 
-def show_plot_box(result, method, cmpclass):
+def show_plot_box(result, diff, method, cmpclass):
     data = dict(
                 zip(
                     [key.split('.')[0] for key in result.keys()],
@@ -93,7 +93,8 @@ def show_plot_box(result, method, cmpclass):
     dirpath = current_path + "\\cmp_out\\"
     if not os.path.exists(dirpath):
         os.makedirs(dirpath)
-    plt.savefig(dirpath + "\\" + method + "_" + cmpclass + ".png")
+    diff_concat = '_'.join(diff)
+    plt.savefig(dirpath + "\\" + diff_concat + "_" + method + "_" + cmpclass + ".png")
 
 def show_tsne(dirpath, filename, data):
     tsne = TSNE()
@@ -110,7 +111,7 @@ def show_tsne(dirpath, filename, data):
     for i in range(X_norm.shape[0]):
         plt.plot(X_norm[i, 0], X_norm[i, 1], color=jet(label[i] / len(data)), marker='o', markersize=12)
 
-    plt.title('PCA embedding of ' + filename)
+    plt.title('t-SNE embedding of ' + dirpath.split("\\")[-1] + "_" + filename)
     plt.grid()
     dirpath = current_path + "\\t-SNE_out\\" + dirpath.split("\\")[-1]
     if not os.path.exists(dirpath):
@@ -166,8 +167,8 @@ if __name__ == '__main__':
     
     if out and args.euclidean:
         print('Show euclidean plot box ...')
-        show_plot_box(result, "euclidean", "sim")
-        show_plot_box(result, "euclidean", "dissim")
+        show_plot_box(result, args.diff, "euclidean", "sim")
+        show_plot_box(result, args.diff, "euclidean", "dissim")
 
     with open(fout, 'w+', encoding='utf-8') as f:
         f.write(json.dumps(result))
