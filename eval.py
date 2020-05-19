@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
+from scipy import stats
 
 # https://medium.com/marketingdatascience/%E8%A7%A3%E6%B1%BApython-3-matplotlib%E8%88%87seaborn%E8%A6%96%E8%A6%BA%E5%8C%96%E5%A5%97%E4%BB%B6%E4%B8%AD%E6%96%87%E9%A1%AF%E7%A4%BA%E5%95%8F%E9%A1%8C-f7b3773a889b
 plt.rcParams['font.sans-serif'] = ['Microsoft JhengHei'] 
@@ -104,6 +105,7 @@ def show_tsne(dirpath, filename, data):
     label = [cluster_index for cluster_index, cluster in enumerate(data) for index in range(len(cluster))]
     result = tsne.fit_transform(X)
     # result = pca.fit_transform(X)
+    result = result[(np.abs(stats.zscore(result)) < 3).all(axis=1)]
     x_min, x_max = result.min(0), result.max(0)
     X_norm = (result - x_min) / (x_max - x_min)
     plt.figure(figsize=(8, 8))
