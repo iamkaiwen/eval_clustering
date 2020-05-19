@@ -26,11 +26,11 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('indir', nargs=1, type=str, metavar='indir', help='json file with clusters of embeddings')
     parser.add_argument('outfile', nargs='?', default='result.json', type=str, metavar='output' ,help='output path to write result')
-    parser.add_argument('-m', '--manhattan', action='store_true', help='Use manhattan method', dest='manhattan')
     parser.add_argument('-e', '--euclidean', action='store_true', help='Use euclidean method', dest='euclidean')
     parser.add_argument('-t', '--tsne', action='store_true', help='Output tsne pic', dest='tsne')
     parser.add_argument('-s', '--same', action='append', help='Same', dest='same')
     parser.add_argument('-d', '--diff', action='append', help='Difference', dest='diff')
+    parser.add_argument('-ex', '--exact', action='store', help='Exact', dest='exact')
 
     return parser.parse_args()
 
@@ -118,7 +118,11 @@ def show_tsne(dirpath, filename, data):
     plt.savefig(dirpath + "\\" + filename + ".png")
     # plt.show()
 
-def have_to_cmp(filename, same, diff):
+def have_to_cmp(filename, same, diff, exact):
+    if exact:
+        if not filename.endswith(exact):
+            return False
+
     if same:
         for s in same:
             if s not in filename:
@@ -141,30 +145,24 @@ if __name__ == '__main__':
         for filename in filenames:
             if not filename.endswith(".json"):
                 continue
-            
+
             with open(dirpath + '/' + filename, 'r', encoding='utf-8') as f:
                 data = json.load(f)['result']
             
-            if args.tsne and have_to_cmp(dirpath + '/' + filename, args.same, args.diff):
+            if args.tsne and have_to_cmp(dirpath + '/' + filename, args.same, args.diff, args.exact):
                 print('gen t-SNE ' + filename.split('.')[0] + '...')
                 show_tsne(dirpath, filename.split('.')[0], data)
 
-            if (args.manhattan or args.euclidean) and have_to_cmp(dirpath + '/' + filename, args.same, args.diff):
+            if args.euclidean and have_to_cmp(dirpath + '/' + filename, args.same, args.diff, args.exact):
                 print('Cal ' + filename.split('.')[0] + '...')
                 out = {}
-
-                if args.manhattan:    
-                    out["manhattan"] = {"sim" : eval_similarity(data, 1), "dissim" : eval_dissimilarity(data, 1)}
                 
                 if args.euclidean:
                     out["euclidean"] = {"sim" : eval_similarity(data, 2), "dissim" : eval_dissimilarity(data, 2)}
 
-                result[filename] = out
-
-    if out and args.manhattan:
-        print('Show manhattan plot box ...')
-        show_plot_box(result, "manhattan", "sim")
-        show_plot_box(result, "manhattan", "dissim")
+                print(dirpath)
+                key = dirpath.split('\\')[-1] + "_" + filename
+                result[key] = out
     
     if out and args.euclidean:
         print('Show euclidean plot box ...')
