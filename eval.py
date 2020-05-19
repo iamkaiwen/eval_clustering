@@ -29,7 +29,8 @@ def parse_args():
     parser.add_argument('-m', '--manhattan', action='store_true', help='Use manhattan method', dest='manhattan')
     parser.add_argument('-e', '--euclidean', action='store_true', help='Use euclidean method', dest='euclidean')
     parser.add_argument('-t', '--tsne', action='store_true', help='Output tsne pic', dest='tsne')
-    parser.add_argument('-q', '--query', action='append', help='Query', dest='query')
+    parser.add_argument('-s', '--same', action='append', help='Same', dest='same')
+    parser.add_argument('-d', '--diff', action='append', help='Difference', dest='diff')
 
     return parser.parse_args()
 
@@ -117,15 +118,18 @@ def show_tsne(dirpath, filename, data):
     plt.savefig(dirpath + "\\" + filename + ".png")
     # plt.show()
 
-def have_to_cmp(filename, query):
-    if not query:
-        return True
-    
-    for q in query:
-        if q not in filename:
-            return False
-    return True
+def have_to_cmp(filename, same, diff):
+    if same:
+        for s in same:
+            if s not in filename:
+                return False
 
+    if diff:
+        for d in diff:
+            if d in filename:
+                return True
+        return False
+    return True
 
 if __name__ == '__main__':
     args = parse_args()
@@ -135,14 +139,17 @@ if __name__ == '__main__':
 
     for dirpath, dirnames, filenames in os.walk(fin):
         for filename in filenames:
+            if not filename.endswith(".json"):
+                continue
+            
             with open(dirpath + '/' + filename, 'r', encoding='utf-8') as f:
                 data = json.load(f)['result']
             
-            if args.tsne and have_to_cmp(filename, args.query):
+            if args.tsne and have_to_cmp(dirpath + '/' + filename, args.same, args.diff):
                 print('gen t-SNE ' + filename.split('.')[0] + '...')
                 show_tsne(dirpath, filename.split('.')[0], data)
 
-            if (args.manhattan or args.euclidean) and have_to_cmp(filename, args.query):
+            if (args.manhattan or args.euclidean) and have_to_cmp(dirpath + '/' + filename, args.same, args.diff):
                 print('Cal ' + filename.split('.')[0] + '...')
                 out = {}
 
