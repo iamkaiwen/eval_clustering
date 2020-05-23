@@ -150,30 +150,30 @@ if __name__ == '__main__':
         for filename in filenames:
             if not filename.endswith(".json") or filename == "groundtruth.json":
                 continue
-            # try:
-            if not have_to_cmp(dirpath + '/' + filename, args.same, args.diff, args.exact):
-                continue
+            try:
+                if not have_to_cmp(dirpath + '/' + filename, args.same, args.diff, args.exact):
+                    continue
 
-            with open(dirpath + '/' + filename, 'r', encoding='utf-8') as f:
-                print("[filename] " + dirpath + '/' + filename)
-                data = json.load(f)['result']
-            
-            if args.tsne and have_to_cmp(dirpath + '/' + filename, args.same, args.diff, args.exact):
-                # print('gen t-SNE ' + filename.split('.')[0] + '...')
-                show_tsne(dirpath, filename.split('.')[0], data)
-
-            if args.euclidean and have_to_cmp(dirpath + '/' + filename, args.same, args.diff, args.exact):
-                print('Cal ' + filename.split('.')[0] + '...')
-                out = {}
+                with open(dirpath + '/' + filename, 'r', encoding='utf-8') as f:
+                    print("[filename] " + dirpath + '/' + filename)
+                    data = json.load(f)['result']
                 
-                if args.euclidean:
-                    out["euclidean"] = {"sim" : eval_similarity(data, 2), "dissim" : eval_dissimilarity(data, 2)}
+                if args.tsne and have_to_cmp(dirpath + '/' + filename, args.same, args.diff, args.exact):
+                    # print('gen t-SNE ' + filename.split('.')[0] + '...')
+                    show_tsne(dirpath, filename.split('.')[0], data)
 
-                print(dirpath)
-                key = dirpath.split('\\')[-1] + "_" + filename
-                result[key] = out
-            # except:
-            #     print("*** [error] " + dirpath + '/' + filename)
+                if args.euclidean and have_to_cmp(dirpath + '/' + filename, args.same, args.diff, args.exact):
+                    print('Cal ' + filename.split('.')[0] + '...')
+                    out = {}
+                    
+                    if args.euclidean:
+                        out["euclidean"] = {"sim" : eval_similarity(data, 2), "dissim" : eval_dissimilarity(data, 2)}
+
+                    print(dirpath)
+                    key = dirpath.split('\\')[-1] + "_" + filename
+                    result[key] = out
+            except:
+                print("*** [error] " + dirpath + '/' + filename)
     
     if result and args.euclidean:
         print('Show euclidean plot box ...')

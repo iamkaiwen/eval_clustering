@@ -9,7 +9,7 @@ with open(sys.argv[2], 'r', encoding='utf-8') as f:
 
 for dirpath, dirnames, filenames in os.walk("."):
         for filename in filenames:
-            if sys.argv[1] not in filename:
+            if sys.argv[1] not in filename or filename.startswith("title_"):
                 continue
 
             with open(dirpath + '/' + filename, 'r', encoding='utf-8') as f:
@@ -28,9 +28,10 @@ for dirpath, dirnames, filenames in os.walk("."):
                 for cluster_idx, cluster in enumerate(data):
                     for new in cluster:
                         match = False
-                        for real in groundtruth[str(new["index"])]:
-                            if lookup[real] == cluster_idx:
-                                match = True
+                        if str(new["index"]) in groundtruth:
+                            for real in groundtruth[str(new["index"])]:
+                                if lookup[real] == cluster_idx:
+                                    match = True
                         if not match:
                             tmp_error += 1
 
@@ -40,3 +41,12 @@ for dirpath, dirnames, filenames in os.walk("."):
             print("total:\t" + str(total))
             print("error:\t" + str(error))
             print("lose:\t" + str(1-error/total))
+
+            output = []
+
+            for cluster_idx, cluster in enumerate(data):
+                output.append([])
+                for new in cluster:
+                    output[cluster_idx].append(new["title"])
+            
+            json.dump({"output" : output}, open(dirpath + '/title_' + filename, "w", encoding="utf-8"), ensure_ascii=False)
