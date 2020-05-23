@@ -1,22 +1,42 @@
+from itertools import permutations 
 import json
 import sys
-
-with open(sys.argv[1], 'r', encoding='utf-8') as f:
-    print("[data] " + sys.argv[1])
-    data = json.load(f)['result']
+import os
 
 with open(sys.argv[2], 'r', encoding='utf-8') as f:
     print("[groundtruth] " + sys.argv[2])
     groundtruth = json.load(f)
 
-total = 0
-error = 0
-for cluster_idx, cluster in enumerate(data):
-    for new in cluster:
-        total += 1
-        if groundtruth[str(new["index"])][0] != cluster_idx:
-            error += 1
+for dirpath, dirnames, filenames in os.walk("."):
+        for filename in filenames:
+            if sys.argv[1] not in filename:
+                continue
 
-print("total:\t" + str(total))
-print("error:\t" + str(error))
-print("lose:\t" + str(1-error/total))
+            with open(dirpath + '/' + filename, 'r', encoding='utf-8') as f:
+                print("[data]\t" + dirpath + '/' + filename)
+                data = json.load(f)['result']
+
+            total = 0
+            for cluster_idx, cluster in enumerate(data):
+                for new in cluster:
+                    total += 1
+            
+            error = total
+            perm = permutations([i for i in range(int(sys.argv[3]))])
+            for lookup in perm:
+                tmp_error = 0
+                for cluster_idx, cluster in enumerate(data):
+                    for new in cluster:
+                        match = False
+                        for real in groundtruth[str(new["index"])]:
+                            if lookup[real] == cluster_idx:
+                                match = True
+                        if not match:
+                            tmp_error += 1
+
+                if tmp_error < error:
+                    error = tmp_error
+
+            print("total:\t" + str(total))
+            print("error:\t" + str(error))
+            print("lose:\t" + str(1-error/total))
