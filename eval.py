@@ -14,6 +14,7 @@ from scipy import stats
 # https://medium.com/marketingdatascience/%E8%A7%A3%E6%B1%BApython-3-matplotlib%E8%88%87seaborn%E8%A6%96%E8%A6%BA%E5%8C%96%E5%A5%97%E4%BB%B6%E4%B8%AD%E6%96%87%E9%A1%AF%E7%A4%BA%E5%95%8F%E9%A1%8C-f7b3773a889b
 plt.rcParams['font.sans-serif'] = ['Microsoft JhengHei'] 
 plt.rcParams['axes.unicode_minus'] = False
+plt.rcParams.update({'figure.max_open_warning': 0})
 
 current_path = os.path.abspath(".")
 
@@ -96,6 +97,7 @@ def show_plot_box(result, diff, method, cmpclass):
         os.makedirs(dirpath)
     diff_concat = '_'.join(diff)
     plt.savefig(dirpath + "\\" + diff_concat + "_" + method + "_" + cmpclass + ".png")
+    plt.close()
 
 def show_tsne(dirpath, filename, data):
     tsne = TSNE()
@@ -146,14 +148,18 @@ if __name__ == '__main__':
 
     for dirpath, dirnames, filenames in os.walk(fin):
         for filename in filenames:
-            if not filename.endswith(".json"):
+            if not filename.endswith(".json") or filename == "groundtruth.json":
+                continue
+            # try:
+            if not have_to_cmp(dirpath + '/' + filename, args.same, args.diff, args.exact):
                 continue
 
             with open(dirpath + '/' + filename, 'r', encoding='utf-8') as f:
+                print("[filename] " + dirpath + '/' + filename)
                 data = json.load(f)['result']
             
             if args.tsne and have_to_cmp(dirpath + '/' + filename, args.same, args.diff, args.exact):
-                print('gen t-SNE ' + filename.split('.')[0] + '...')
+                # print('gen t-SNE ' + filename.split('.')[0] + '...')
                 show_tsne(dirpath, filename.split('.')[0], data)
 
             if args.euclidean and have_to_cmp(dirpath + '/' + filename, args.same, args.diff, args.exact):
@@ -166,8 +172,10 @@ if __name__ == '__main__':
                 print(dirpath)
                 key = dirpath.split('\\')[-1] + "_" + filename
                 result[key] = out
+            # except:
+            #     print("*** [error] " + dirpath + '/' + filename)
     
-    if out and args.euclidean:
+    if result and args.euclidean:
         print('Show euclidean plot box ...')
         show_plot_box(result, args.diff, "euclidean", "sim")
         show_plot_box(result, args.diff, "euclidean", "dissim")
