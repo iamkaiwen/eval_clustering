@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 from scipy import stats
+from sklearn import preprocessing
 
 # https://medium.com/marketingdatascience/%E8%A7%A3%E6%B1%BApython-3-matplotlib%E8%88%87seaborn%E8%A6%96%E8%A6%BA%E5%8C%96%E5%A5%97%E4%BB%B6%E4%B8%AD%E6%96%87%E9%A1%AF%E7%A4%BA%E5%95%8F%E9%A1%8C-f7b3773a889b
 plt.rcParams['font.sans-serif'] = ['Microsoft JhengHei'] 
@@ -18,11 +19,15 @@ plt.rcParams.update({'figure.max_open_warning': 0})
 
 current_path = os.path.abspath(".")
 
-def get_lcm(input):
+def get_lcm(arr):
     ans = 1
-    for x in input:
+    for x in arr:
         ans = ans * x // gcd(ans, x)
     return ans
+
+def norm_array(arr):
+    norm = np.linalg.norm(arr)
+    return (arr/norm).tolist()
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -56,7 +61,8 @@ def eval_similarity(data, q):
             tmp += eval_minkowski(news1["embedding"], news2["embedding"], q)
         if len(cluster) >= 2:
             tmp = tmp / (len(cluster) * (len(cluster) - 1) / 2)
-        ret.append(tmp)
+        if tmp != 0:
+            ret.append(tmp)
     return ret
 
 def eval_dissimilarity(data, q):
@@ -82,10 +88,13 @@ def show_plot_box(result, diff, method, cmpclass):
     # extend to same number
     get_lcm_input = [len(value) for key, value in data.items()]
     lcm = get_lcm(get_lcm_input)
-    # print(lcm)
+    print(lcm)
     # print(get_lcm_input)
     for key, value in data.items():
         data[key] = value * (lcm // len(value))
+
+    # get_lcm_input = [len(value) for key, value in data.items()]
+    # print(get_lcm_input)
     
     df = pd.DataFrame(data)
     df.plot.box(grid='True')
@@ -167,13 +176,15 @@ if __name__ == '__main__':
                     out = {}
                     
                     if args.euclidean:
-                        out["euclidean"] = {"sim" : eval_similarity(data, 2), "dissim" : eval_dissimilarity(data, 2)}
+                        out["euclidean"] = {"sim" : norm_array(eval_similarity(data, 2)), "dissim" : norm_array(eval_dissimilarity(data, 2))}
+                        print(str(len(out["euclidean"]["sim"])) + " " + str(len(out["euclidean"]["dissim"])))
 
                     print(dirpath)
                     key = dirpath.split('\\')[-1] + "_" + filename
                     result[key] = out
-            except:
-                print("*** [error] " + dirpath + '/' + filename)
+            except Exception as e:
+                # print("*** [error] " + dirpath + '/' + filename)
+                print(e)
     
     if result and args.euclidean:
         print('Show euclidean plot box ...')
